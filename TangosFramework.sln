@@ -1,0 +1,68 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33712.159
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosCore", "TangosCore\TangosCore.shproj", "{B59D3B84-F999-4F45-83EA-A22BD23D5F3A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TangosRadar", "TangosRadar\TangosRadar.csproj", "{07D9B210-9DC2-4336-A32F-6F9061CBC232}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TangosRadarExtender", "TangosRadarExtender\TangosRadarExtender.csproj", "{7E1284ED-876B-40F3-8120-D333E096AC85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TangosIndyInfo", "TangosIndyInfo\TangosIndyInfo.csproj", "{A88309EF-24B3-460A-9C6C-514C52C9E47D}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosWeaponCore", "TangosWeaponCore\TangosWeaponCore.shproj", "{4DF58612-46D6-4031-BD73-EBAB9D9CCFD5}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosMyIniExtensions", "TangosMyIniExtensions\TangosMyIniExtensions.shproj", "{7F630268-880B-4847-89CF-157598E0769F}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosVector2Extensions", "TangosVector2Extensions\TangosVector2Extensions.shproj", "{F9105588-9A5A-4339-A5A4-99B4944A438D}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosTargetData", "TangosTargetData\TangosTargetData.shproj", "{F5597931-C01D-4659-9725-1D3C6B135BC0}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosValueDebouncer", "TangosValueDebouncer\TangosValueDebouncer.shproj", "{4B275B06-D6D9-4526-BDB4-D54CD8CDB538}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{5AB34B43-8187-4E4F-8A61-A432E231F02A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{07D9B210-9DC2-4336-A32F-6F9061CBC232}.Debug|x64.ActiveCfg = Debug|x64
+		{7E1284ED-876B-40F3-8120-D333E096AC85}.Debug|x64.ActiveCfg = Debug|x64
+		{A88309EF-24B3-460A-9C6C-514C52C9E47D}.Debug|x64.ActiveCfg = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B59D3B84-F999-4F45-83EA-A22BD23D5F3A} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
+		{4DF58612-46D6-4031-BD73-EBAB9D9CCFD5} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
+		{7F630268-880B-4847-89CF-157598E0769F} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
+		{F9105588-9A5A-4339-A5A4-99B4944A438D} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
+		{F5597931-C01D-4659-9725-1D3C6B135BC0} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
+		{4B275B06-D6D9-4526-BDB4-D54CD8CDB538} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7EDC41D5-DAE7-4ACB-9D63-FA027130D69B}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		TangosCore\TangosCore.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
+		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
+		TangosTargetData\TangosTargetData.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
+		TangosValueDebouncer\TangosValueDebouncer.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
+		TangosVector2Extensions\TangosVector2Extensions.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
+		TangosWeaponCore\TangosWeaponCore.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
+		TangosValueDebouncer\TangosValueDebouncer.projitems*{4b275b06-d6d9-4526-bdb4-d54cd8cdb538}*SharedItemsImports = 13
+		TangosWeaponCore\TangosWeaponCore.projitems*{4df58612-46d6-4031-bd73-ebab9d9ccfd5}*SharedItemsImports = 13
+		TangosCore\TangosCore.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
+		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
+		TangosTargetData\TangosTargetData.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
+		TangosWeaponCore\TangosWeaponCore.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
+		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{7f630268-880b-4847-89cf-157598e0769f}*SharedItemsImports = 13
+		TangosCore\TangosCore.projitems*{a88309ef-24b3-460a-9c6c-514c52c9e47d}*SharedItemsImports = 4
+		TangosCore\TangosCore.projitems*{b59d3b84-f999-4f45-83ea-a22bd23d5f3a}*SharedItemsImports = 13
+		TangosTargetData\TangosTargetData.projitems*{f5597931-c01d-4659-9725-1d3c6b135bc0}*SharedItemsImports = 13
+		TangosVector2Extensions\TangosVector2Extensions.projitems*{f9105588-9a5a-4339-a5a4-99b4944a438d}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal
