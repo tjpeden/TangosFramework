@@ -37,6 +37,16 @@ namespace IngameScript
             {
                 this.program = program;
 
+                RegisterChildren(
+                    Active,
+                    new List<Func<ISignal, Response>>
+                    {
+                        ScanIndustry,
+                        ProcessAssemblers,
+                        ProcessRefineries,
+                    }
+                );
+
                 try
                 {
                     program.Me.CustomData = Settings.Global.Syncronize(program.Me.CustomData);
@@ -80,7 +90,7 @@ namespace IngameScript
             override
             protected Response Initial(ISignal signal)
             {
-                return Response.Transition(ScanIndustry);
+                return TransitionTo(ScanIndustry);
             }
 
             protected Response Active(ISignal signal)
@@ -88,9 +98,10 @@ namespace IngameScript
                 if (signal is UpdateInfo && Settings.Global.Debug)
                 {
                     Info();
+                    return Response.Handled;
                 }
 
-                return Response.Handled;
+                return Response.Unhandled;
             }
 
             protected Response ScanIndustry(ISignal signal)
@@ -112,12 +123,12 @@ namespace IngameScript
 
                         if (assemblers.Count > 0)
                         {
-                            return Response.Transition(ProcessAssemblers);
+                            return TransitionTo(ProcessAssemblers);
                         }
 
                         if (refineries.Count > 0)
                         {
-                            return Response.Transition(ProcessRefineries);
+                            return TransitionTo(ProcessRefineries);
                         }
                     }
                     catch (Exception error)
@@ -128,7 +139,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response ProcessAssemblers(ISignal signal)
@@ -167,10 +178,10 @@ namespace IngameScript
 
                         if (refineries.Count > 0)
                         {
-                            return Response.Transition(ProcessRefineries);
+                            return TransitionTo(ProcessRefineries);
                         }
 
-                        return Response.Transition(ScanIndustry);
+                        return TransitionTo(ScanIndustry);
                     }
                     catch (Exception error)
                     {
@@ -180,7 +191,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response ProcessRefineries(ISignal message)
@@ -217,7 +228,7 @@ namespace IngameScript
                             surface.WriteText(text.ToString());
                         }
 
-                        return Response.Transition(ScanIndustry);
+                        return TransitionTo(ScanIndustry);
                     }
                     catch (Exception error)
                     {
@@ -227,7 +238,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             private void GetSurfaces(IMyTextSurfaceProvider provider)

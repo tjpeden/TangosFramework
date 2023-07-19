@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         public const string NAME = "TangosIndyInfo";
-        public const string VERSION = "2.1.0";
+        public const string VERSION = "2.1.2";
 
         private readonly UpdateType Triggers = UpdateType.Trigger | UpdateType.Terminal | UpdateType.Script | UpdateType.Mod;
         private readonly UpdateType Updates = UpdateType.Once | UpdateType.Update1 | UpdateType.Update10 | UpdateType.Update100;
