@@ -31,6 +31,16 @@ namespace IngameScript
                 buffer.Add(line);
             }
 
+            public static void Log(MyIni ini)
+            {
+                buffer.Add(ini.ToString());
+            }
+
+            public static void Log(StringBuilder text)
+            {
+                buffer.Add(text.ToString());
+            }
+
             public static void Clear()
             {
                 buffer.Clear();

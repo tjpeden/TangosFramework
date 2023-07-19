@@ -18,7 +18,6 @@ using VRage.Game.ModAPI.Ingame;
 using VRage.Game.ModAPI.Ingame.Utilities;
 using VRage.Game.ObjectBuilders.Definitions;
 using VRageMath;
-using static IngameScript.Program;
 
 namespace IngameScript
 {
@@ -61,26 +60,26 @@ namespace IngameScript
                 return false;
             }
 
-            byte rValue = 0;
-            if (!byte.TryParse(values[0].Replace("r:", ""), NumberStyles.Any, CultureInfo.InvariantCulture, out rValue))
+            byte rValue;
+            if (!byte.TryParse(values[0].Replace("r:", ""), out rValue))
             {
                 return false;
             }
 
-            byte gValue = 0;
-            if (!byte.TryParse(values[1].Replace("g:", ""), NumberStyles.Any, CultureInfo.InvariantCulture, out gValue))
+            byte gValue;
+            if (!byte.TryParse(values[1].Replace("g:", ""), out gValue))
             {
                 return false;
             }
 
-            byte bValue = 0;
-            if (!byte.TryParse(values[2].Replace("b:", ""), NumberStyles.Any, CultureInfo.InvariantCulture, out bValue))
+            byte bValue;
+            if (!byte.TryParse(values[2].Replace("b:", ""), out bValue))
             {
                 return false;
             }
 
-            byte aValue = 0;
-            if (!byte.TryParse(values[3].Replace("a:", ""), NumberStyles.Any, CultureInfo.InvariantCulture, out aValue))
+            byte aValue;
+            if (!byte.TryParse(values[3].Replace("a:", ""), out aValue))
             {
                 return false;
             }
@@ -92,14 +91,12 @@ namespace IngameScript
 
         public static string ToString(this Color color)
         {
-            CultureInfo culture = CultureInfo.CurrentCulture;
             return string.Format(
-                culture,
                 "R:{0} G:{1} B:{2} A:{3}",
-                color.R.ToString(culture),
-                color.G.ToString(culture),
-                color.B.ToString(culture),
-                color.A.ToString(culture)
+                color.R.ToString(),
+                color.G.ToString(),
+                color.B.ToString(),
+                color.A.ToString()
             );
         }
 
@@ -150,11 +147,6 @@ namespace IngameScript
             return (float)iniValue.ToDouble();
         }
 
-        public static Relation ToRelation(this MyIniValue iniValue)
-        {
-            return (Relation)iniValue.ToByte();
-        }
-
         public static void Set(this MyIni ini, string section, string key, Color value)
         {
             ini.Set(section, key, value.ToString());
@@ -168,11 +160,6 @@ namespace IngameScript
         public static void Set(this MyIni ini, string section, string key, DateTime value)
         {
             ini.Set(section, key, value.ToString());
-        }
-
-        public static void Set(this MyIni ini, string section, string key, Relation value)
-        {
-            ini.Set(section, key, (int)value);
         }
     }
 }

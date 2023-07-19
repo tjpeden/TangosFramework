@@ -23,6 +23,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosValueDebouncer", "Tan
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{5AB34B43-8187-4E4F-8A61-A432E231F02A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TangosRadarLogger", "TangosRadarLogger\TangosRadarLogger.csproj", "{A5BBC205-375D-4EAC-A732-725F0D90C9E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,8 @@ Global
 		{07D9B210-9DC2-4336-A32F-6F9061CBC232}.Debug|x64.ActiveCfg = Debug|x64
 		{7E1284ED-876B-40F3-8120-D333E096AC85}.Debug|x64.ActiveCfg = Debug|x64
 		{A88309EF-24B3-460A-9C6C-514C52C9E47D}.Debug|x64.ActiveCfg = Debug|x64
+		{A5BBC205-375D-4EAC-A732-725F0D90C9E5}.Debug|x64.ActiveCfg = Debug|x64
+		{A5BBC205-375D-4EAC-A732-725F0D90C9E5}.Debug|x64.Build.0 = Debug|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -60,6 +64,9 @@ Global
 		TangosTargetData\TangosTargetData.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
 		TangosWeaponCore\TangosWeaponCore.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
 		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{7f630268-880b-4847-89cf-157598e0769f}*SharedItemsImports = 13
+		TangosCore\TangosCore.projitems*{a5bbc205-375d-4eac-a732-725f0d90c9e5}*SharedItemsImports = 4
+		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{a5bbc205-375d-4eac-a732-725f0d90c9e5}*SharedItemsImports = 4
+		TangosTargetData\TangosTargetData.projitems*{a5bbc205-375d-4eac-a732-725f0d90c9e5}*SharedItemsImports = 4
 		TangosCore\TangosCore.projitems*{a88309ef-24b3-460a-9c6c-514c52c9e47d}*SharedItemsImports = 4
 		TangosCore\TangosCore.projitems*{b59d3b84-f999-4f45-83ea-a22bd23d5f3a}*SharedItemsImports = 13
 		TangosTargetData\TangosTargetData.projitems*{f5597931-c01d-4659-9725-1d3c6b135bc0}*SharedItemsImports = 13

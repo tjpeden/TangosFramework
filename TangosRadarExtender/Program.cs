@@ -23,10 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         public const string NAME = "TangosRadarExtender";
-        public const string VERSION = "3.4.6";
-
-        private static readonly UpdateSource update = new UpdateSource();
-        private static readonly UpdateInfo updateInfo = new UpdateInfo();
+        public const string VERSION = "3.4.10";
 
         private readonly UpdateType Triggers = UpdateType.Trigger | UpdateType.Terminal | UpdateType.Script | UpdateType.Mod;
         private readonly UpdateType Updates = UpdateType.Once | UpdateType.Update1 | UpdateType.Update10 | UpdateType.Update100;
@@ -42,8 +39,8 @@ namespace IngameScript
         {
             if ((updateSource & Updates) != 0)
             {
-                machine.Handle(update);
-                machine.Handle(updateInfo);
+                machine.Handle(UpdateSource.Global);
+                machine.Handle(UpdateInfo.Global);
             }
 
             if ((updateSource & Triggers) != 0 && argument != "")

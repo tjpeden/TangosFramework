@@ -24,25 +24,34 @@ namespace IngameScript
     {
         public class TangosRadarExtender : StateMachine
         {
-            private readonly WCPBAPI wcapi;
             private readonly Program program;
+            private readonly WCPBAPI wcapi = new WCPBAPI();
 
+            private readonly Dictionary<long, TargetData> targets = new Dictionary<long, TargetData>();
+            
             private readonly IMyRadioAntenna antenna;
 
             private DateTime LastTransmission;
-            private double LastTransmissionSeconds => DateTime.Now.Subtract(LastTransmission).TotalSeconds;
 
-            public readonly Dictionary<long, TargetData> targets;
+            private double LastTransmissionSeconds => DateTime.Now.Subtract(LastTransmission).TotalSeconds;
+            private bool EnemySighted => targets.Any(pair => pair.Value.Relation == Relation.Hostile);
 
             public TangosRadarExtender(Program program) : base()
             {
                 this.program = program;
 
-                targets = new Dictionary<long, TargetData>();
-
-                wcapi = new WCPBAPI();
-
                 LastTransmission = DateTime.Now;
+
+                RegisterChildren(
+                    Active,
+                    new List<Func<ISignal, Response>>
+                    {
+                        GetTargets,
+                        Evaluate,
+                        Transmit,
+                        DisableAntenna,
+                    }
+                );
 
                 try
                 {
@@ -78,7 +87,7 @@ namespace IngameScript
             override
             protected Response Initial(ISignal signal)
             {
-                return Response.Transition(Activate);
+                return TransitionTo(Activate);
             }
 
             protected Response Activate(ISignal signal)
@@ -91,7 +100,7 @@ namespace IngameScript
                         {
                             Logger.Log("WeaponCore PB API activated.");
 
-                            return Response.Transition(GetTargets);
+                            return TransitionTo(GetTargets);
                         }
                         else
                         {
@@ -116,9 +125,11 @@ namespace IngameScript
                 if (signal is UpdateInfo && Settings.Global.Debug)
                 {
                     Info();
+                    
+                    return Response.Handled;
                 }
-                
-                return Response.Handled;
+
+                return Response.Unhandled;
             }
 
             protected Response GetTargets(ISignal signal)
@@ -127,7 +138,7 @@ namespace IngameScript
                 {
                     foreach (var item in targets.ToList())
                     {
-                        if (item.Value.Age >= 5)
+                        if (item.Value.Age.TotalHours >= 24)
                         {
                             targets.Remove(item.Key);
                         }
@@ -140,6 +151,7 @@ namespace IngameScript
                 {
                     try
                     {
+                        MyDetectedEntityInfo? focus;
                         var wcTargets = new Dictionary<MyDetectedEntityInfo, float>();
                         var wcObstructions = new List<MyDetectedEntityInfo>();
 
@@ -147,17 +159,37 @@ namespace IngameScript
 
                         foreach (var target in wcTargets)
                         {
-                            AddTarget(target.Key, target.Value);
+                            if (target.Key.EntityId == 0) continue;
+
+                            targets[target.Key.EntityId] = TargetData.FromMyDetectedEntityInfo(target.Key, target.Value);
+
+                            focus = wcapi.GetAiFocus(target.Key.EntityId);
+
+                            if (focus.HasValue && focus.Value.EntityId != 0)
+                            {
+                                targets[target.Key.EntityId].Targeting = focus.Value.EntityId;
+                            }
                         }
 
                         wcapi.GetObstructions(program.Me, wcObstructions);
 
                         foreach (var obstruction in wcObstructions)
                         {
-                            AddTarget(obstruction);
+                            if (obstruction.EntityId == 0) continue;
+
+                            targets[obstruction.EntityId] = TargetData.FromMyDetectedEntityInfo(obstruction);
+
+                            focus = wcapi.GetAiFocus(obstruction.EntityId);
+
+                            if (focus.HasValue && focus.Value.EntityId != 0)
+                            {
+                                targets[obstruction.EntityId].Targeting = focus.Value.EntityId;
+                            }
                         }
 
-                        return Response.Transition(Evaluate);
+                        targets.Remove(program.Me.CubeGrid.EntityId);
+
+                        return TransitionTo(Evaluate);
                     }
                     catch (Exception error)
                     {
@@ -167,7 +199,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response Evaluate(ISignal signal)
@@ -178,15 +210,10 @@ namespace IngameScript
                     {
                         if (targets.Count > 0 && LastTransmissionSeconds >= Settings.Global.Delay)
                         {
-                            var enemySighted = targets.Any(pair => pair.Value.Relation == Relation.Hostile);
-
-                            if (enemySighted)
-                            {
-                                return Response.Transition(Transmit);
-                            }
+                            return TransitionTo(Transmit);
                         }
 
-                        return Response.Transition(GetTargets);
+                        return TransitionTo(GetTargets);
                     }
                     catch (Exception error)
                     {
@@ -196,14 +223,13 @@ namespace IngameScript
                     return Response.Handled;
                 }
 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response Transmit(ISignal signal)
             {
                 if (signal is Enter)
                 {
-                    program.Runtime.UpdateFrequency = UpdateFrequency.Update10;
                     antenna.Enabled = true;
 
                     return Response.Handled;
@@ -223,9 +249,10 @@ namespace IngameScript
                             ini.Set(id, "Name", target.Name);
                             ini.Set(id, "Type", target.Type);
                             ini.Set(id, "Threat", target.Threat);
-                            ini.Set(id, "Relation", target.Relation);
+                            ini.Set(id, "Relation", (byte)target.Relation);
                             ini.Set(id, "Position", target.Position);
                             ini.Set(id, "Velocity", target.Velocity);
+                            ini.Set(id, "Targeting", target.Targeting);
                             ini.Set(id, "LastSeen", target.LastSeen);
                         }
 
@@ -233,7 +260,7 @@ namespace IngameScript
 
                         LastTransmission = DateTime.Now;
 
-                        return Response.Transition(DisableAntenna);
+                        return TransitionTo(DisableAntenna);
                     }
                     catch (Exception error)
                     {
@@ -243,7 +270,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response DisableAntenna(ISignal signal)
@@ -254,7 +281,7 @@ namespace IngameScript
                     {
                         antenna.Enabled = false;
 
-                        return Response.Transition(GetTargets);
+                        return TransitionTo(GetTargets);
                     }
                     catch (Exception error)
                     {
@@ -264,95 +291,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
 
-                if (signal is Exit)
-                {
-                    program.Runtime.UpdateFrequency = UpdateFrequency.Update100;
-
-                    return Response.Handled;
-                }
-
-                return Response.Parent(Active);
-            }
-
-            private void AddTarget(MyDetectedEntityInfo info, float threat = 0)
-            {
-                if (info.EntityId != 0 && !targets.ContainsKey(info.EntityId))
-                {
-                    TargetData target = new TargetData
-                    {
-                        Threat = threat,
-                        Name = info.Name,
-                        Position = info.Position,
-                        Velocity = info.Velocity,
-                    };
-
-                    var focus = wcapi.GetAiFocus(info.EntityId);
-
-                    if (focus.HasValue && focus.Value.EntityId != 0)
-                    {
-                        target.Targeting = focus.Value.EntityId;
-                    }
-
-                    switch (info.Type)
-                    {
-                        case MyDetectedEntityType.CharacterHuman:
-                            target.Type = "P";
-
-                            break;
-                        case MyDetectedEntityType.LargeGrid:
-                            target.Type = "L";
-
-                            break;
-                        case MyDetectedEntityType.SmallGrid:
-                            target.Type = "S";
-
-                            break;
-                        default:
-                            target.Type = "?";
-
-                            break;
-                    }
-
-                    switch (info.Relationship)
-                    {
-                        case MyRelationsBetweenPlayerAndBlock.Enemies:
-                            target.Relation = Relation.Hostile;
-
-                            break;
-
-                        case MyRelationsBetweenPlayerAndBlock.Owner:
-                        case MyRelationsBetweenPlayerAndBlock.FactionShare:
-                        case MyRelationsBetweenPlayerAndBlock.Friends:
-                            target.Relation = Relation.Allied;
-
-                            break;
-
-                        default:
-                            target.Threat = -1;
-
-                            if (info.Name == "MyVoxelMap")
-                            {
-                                target.Relation = Relation.None;
-
-                                break;
-                            }
-
-                            if (info.Type == MyDetectedEntityType.Unknown)
-                            {
-                                target.Relation = Relation.Allied;
-
-                                break;
-                            }
-
-                            target.Relation = Relation.Neutral;
-
-                            break;
-                    }
-
-                    target.LastSeen = DateTime.Now;
-
-                    targets[info.EntityId] = target;
-                }
+                return Response.Unhandled;
             }
 
             private void HandleError(Exception error)
@@ -366,20 +305,18 @@ namespace IngameScript
 
             private void Info()
             {
-                var text = new StringBuilder();
-
-                text.AppendLine($"{NAME} v{VERSION}");
-                text.AppendLine("===================");
-
-                text.AppendLine();
-
-                text.AppendLine($"Task: {CurrentStateName}");
-
-                text.AppendLine();
-
-                text.AppendLine("Log:");
-
-                text.AppendLine(Logger.AsString);
+                var text = new StringBuilder()
+                .AppendLine($"{NAME} v{VERSION}")
+                .AppendLine("===================")
+                .AppendLine()
+                .AppendLine($"Task: {CurrentStateName}")
+                .AppendLine()
+                .AppendLine($"Entities: {targets.Count}")
+                .AppendLine($"Enemy Sighted: {EnemySighted}")
+                .AppendLine($"Last Transmission: {LastTransmissionSeconds:N0}")
+                .AppendLine()
+                .AppendLine("Log:")
+                .AppendLine(Logger.AsString);
 
                 program.Echo(text.ToString());
             }

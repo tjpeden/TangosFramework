@@ -21,8 +21,6 @@ using static IngameScript.Program;
 
 namespace IngameScript
 {
-    using State = Func<ISignal, Response>;
-
     partial class Program
     {
         public interface ISignal { }
@@ -36,50 +34,26 @@ namespace IngameScript
         public class Exit : Singleton<Exit>, ISignal { }
         public class Parent : Singleton<Parent>, ISignal { }
 
-        public class Response
+        public enum Response
         {
-            public static Response Handled = new Response(Type.Handled);
-
-            public static Response Parent(State state) => new Response(Type.Parent, state);
-            public static Response Transition(State state) => new Response(Type.Transition, state);
-
-            private readonly Type type;
-
-            public readonly State State;
-
-            public bool IsHandled => type == Type.Handled;
-            public bool IsParent => type == Type.Parent && State != null;
-            public bool IsTransition => type == Type.Transition && State != null;
-
-            private Response(Type type)
-            {
-                this.type = type;
-            }
-
-            private Response(Type type, State state)
-            {
-                this.type = type;
-
-                State = state;
-            }
-
-            private enum Type
-            {
-                Parent,
-                Handled,
-                Transition,
-            }
+            Handled,
+            Unhandled,
+            Transition,
         }
 
         public abstract class StateMachine
         {
-            private State current;
+            private readonly Dictionary<Func<ISignal, Response>, Func<ISignal, Response>> parents = new Dictionary<Func<ISignal, Response>, Func<ISignal, Response>>();
+
+            private Func<ISignal, Response> current;
+            private Func<ISignal, Response> next;
 
             public string CurrentStateName => current.Method.Name;
 
             public StateMachine()
             {
                 current = Initial;
+                next = null;
 
                 Handle(Enter.Global);
             }
@@ -90,69 +64,91 @@ namespace IngameScript
 
                 var state = current;
 
-                do
-                {
-                    response = state(signal);
+                SendSignal:
+                response = state(signal);
 
-                    if (response.IsParent)
-                    {
-                        state = response.State;
-                    }
-                } while (response.IsParent);
-
-                if (response.IsTransition)
+                if (response == Response.Unhandled && parents.ContainsKey(state))
                 {
-                    Transition(response.State);
+                    state = parents[state];
+
+                    goto SendSignal;
+                }
+
+                if (response == Response.Transition)
+                {
+                    Transition();
                 }
             }
 
-            private void Transition(State target)
+            protected void RegisterChild(Func<ISignal, Response> parent, Func<ISignal, Response> child)
             {
-                Response response;
+                parents[child] = parent;
+            }
 
-                var targetLiniage = Liniage(target);
-
-                do
+            protected void RegisterChildren(Func<ISignal, Response> parent, List<Func<ISignal, Response>> children)
+            {
+                foreach (var child in children)
                 {
-                    if (current == target) return;
+                    RegisterChild(parent, child);
+                }
+            }
+
+            protected Response TransitionTo(Func<ISignal, Response> next)
+            {
+                this.next = next;
+
+                return Response.Transition;
+            }
+
+            private void Transition()
+            {
+                if (next == null)
+                {
+                    throw new InvalidOperationException("Please call TransitiionTo passing the next state.");
+                }
+
+                var targetLiniage = Liniage(next);
+
+                if (current == next) return;
+
+                while (parents.ContainsKey(current))
+                {
+                    if (current == next) return;
 
                     int index = targetLiniage.IndexOf(current);
 
                     if (index >= 0)
                     {
-                        targetLiniage = new List<State>(targetLiniage.Skip(index + 1));
+                        targetLiniage = new List<Func<ISignal, Response>>(targetLiniage.Skip(index + 1));
 
                         break;
                     }
 
-                    response = current(Parent.Global);
-
                     current(Exit.Global);
 
-                    current = response.State;
-                } while (response.IsParent);
+                    current = parents[current];
+                }
 
                 foreach (var state in targetLiniage)
                 {
                     state(Enter.Global);
                 }
 
-                current = target;
+                current = next;
+                next = null;
             }
 
-            private List<State> Liniage(State state)
+            private List<Func<ISignal, Response>> Liniage(Func<ISignal, Response> state)
             {
-                List<State> stack;
+                List<Func<ISignal, Response>> stack;
 
-                var response = state(Parent.Global);
-
-                if (response.IsParent)
+                if (parents.ContainsKey(state))
                 {
-                    stack = Liniage(response.State);
+                    stack = Liniage(parents[state]);
                 }
                 else
                 {
-                    stack = new List<State>();
+                    stack = new List<Func<ISignal, Response>>();
                 }
 
                 stack.Add(state);

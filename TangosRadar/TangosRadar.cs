@@ -32,27 +32,27 @@ namespace IngameScript
                 { Relation.Hostile, "Circle" },
             };
 
-            private readonly WCPBAPI wcapi;
             private readonly Program program;
+            private readonly WCPBAPI wcapi = new WCPBAPI();
 
             private readonly RadarRenderer renderer;
 
-            private readonly Debounce enemyDetected;
-            private readonly Debounce enemyClose;
+            private readonly Debounce enemyDetected = new Debounce();
+            private readonly Debounce enemyClose = new Debounce();
 
             private readonly IMyShipController controller;
 
             private readonly IMyBlockGroup warningGroup;
             private readonly IMyBlockGroup alarmGroup;
 
-            private readonly List<IMyTextSurfaceProvider> surfaceProviders;
+            private readonly List<IMyTextSurfaceProvider> surfaceProviders = new List<IMyTextSurfaceProvider>();
 
-            private readonly List<IMyTextSurface> radarSurfaces;
-            private readonly List<IMyTextSurface> enemySurfaces;
-            private readonly List<IMyTextSurface> friendSurfaces;
+            private readonly List<IMyTextSurface> radarSurfaces = new List<IMyTextSurface>();
+            private readonly List<IMyTextSurface> enemySurfaces = new List<IMyTextSurface>();
+            private readonly List<IMyTextSurface> friendSurfaces = new List<IMyTextSurface>();
 
-            private readonly List<long> enemyTargets;
-            private readonly List<long> friendTargets;
+            private readonly List<long> enemyTargets = new List<long>();
+            private readonly List<long> friendTargets = new List<long>();
 
             private List<IMyTextSurface>.Enumerator radarSurfaceEnumerator;
 
@@ -78,10 +78,10 @@ namespace IngameScript
             public int EnemyTargetCount => enemyTargets.Count;
             public int FriendlyTargetCount => friendTargets.Count;
 
-            public readonly Dictionary<long, TargetData> targets;
+            public readonly Dictionary<long, TargetData> targets = new Dictionary<long, TargetData>();
 
-            public readonly List<long> targetsAbovePlane;
-            public readonly List<long> targetsBelowPlane;
+            public readonly List<long> targetsAbovePlane = new List<long>();
+            public readonly List<long> targetsBelowPlane = new List<long>();
 
             public long currentTarget;
 
@@ -91,25 +91,20 @@ namespace IngameScript
 
                 renderer = new RadarRenderer(this);
 
-                targets = new Dictionary<long, TargetData>();
-
-                surfaceProviders = new List<IMyTextSurfaceProvider>();
-
-                radarSurfaces = new List<IMyTextSurface>();
-                enemySurfaces = new List<IMyTextSurface>();
-                friendSurfaces = new List<IMyTextSurface>();
-
-                enemyTargets = new List<long>();
-                friendTargets = new List<long>();
-                targetsAbovePlane = new List<long>();
-                targetsBelowPlane = new List<long>();
-
-                enemyDetected = new Debounce();
-                enemyClose = new Debounce();
-
-                wcapi = new WCPBAPI();
-
                 lastSpriteCacheReset = DateTime.Now;
+
+                RegisterChildren(
+                    Active,
+                    new List<Func<ISignal, Response>>
+                    {
+                        GetTargets,
+                        ProcessTargetList,
+                        UpdateEnemyLCD,
+                        UpdateFriendLCD,
+                        UpdateRadar,
+                        UpdateAlarm,
+                    }
+                );
 
                 try
                 {
@@ -129,7 +124,7 @@ namespace IngameScript
                     }
                     else
                     {
-                        throw new Exception("Controller not found.");
+                        throw new Exception("No tagged controller found.");
                     }
 
                     program.GridTerminalSystem.GetBlocksOfType(
@@ -195,7 +190,7 @@ namespace IngameScript
             override
             protected Response Initial(ISignal signal)
             {
-                return Response.Transition(Activate);
+                return TransitionTo(Activate);
             }
 
             protected Response Activate(ISignal signal)
@@ -208,7 +203,7 @@ namespace IngameScript
                         {
                             Logger.Log("WeaponCore PB API activated.");
 
-                            return Response.Transition(GetTargets);
+                            return TransitionTo(GetTargets);
                         }
                         else
                         {
@@ -223,63 +218,37 @@ namespace IngameScript
                     {
                         Info();
                     }
+                    return Response.Handled;
                 }
-                
-                return Response.Handled;
+
+                return Response.Unhandled;
             }
 
             protected Response Active(ISignal signal)
             {
                 if (signal is IGCSource)
                 {
-                    Logger.Log("IGCSource");
-
                     while (listener.HasPendingMessage)
                     {
-                        MyIGCMessage IGCsignal = listener.AcceptMessage();
+                        MyIGCMessage message = listener.AcceptMessage();
 
-                        if (IGCsignal.Data is string)
+                        if (message.Data is string)
                         {
-                            var ini = new MyIni();
-
-                            if (ini.TryParse(IGCsignal.Data as string))
-                            {
-                                var ids = new List<string>();
-
-                                ini.GetSections(ids);
-
-                                Logger.Log($"Parsing {ids.Count} target from {IGCsignal.Source}");
-
-                                foreach (var id in ids)
-                                {
-                                    var entityId = long.Parse(id);
-                                    var target = new TargetData
-                                    {
-                                        Name = ini.Get(id, "Name").ToString(),
-                                        Type = ini.Get(id, "Type").ToString(),
-
-                                        Position = ini.Get(id, "Position").ToVector3D(),
-                                        Velocity = ini.Get(id, "Velocity").ToVector3D(),
-
-                                        Threat = ini.Get(id, "Threat").ToFloat(),
-                                        Relation = ini.Get(id, "Relation").ToRelation(),
-
-                                        LastSeen = ini.Get(id, "LastSeen").ToDateTime(),
-                                    };
-
-                                    targets[entityId] = target;
-                                }
-                            }
+                            TargetData.Parse(message.Data as string, targets);
                         }
                     }
+
+                    return Response.Handled;
                 }
 
                 if (signal is UpdateInfo && Settings.Global.Debug)
                 {
                     Info();
+                    
+                    return Response.Handled;
                 }
-                
-                return Response.Handled;
+
+                return Response.Unhandled;
             }
 
             protected Response GetTargets(ISignal signal)
@@ -288,7 +257,7 @@ namespace IngameScript
                 {
                     foreach (var item in targets.ToList())
                     {
-                        if (item.Value.Age >= 30)
+                        if (item.Value.Age.TotalSeconds >= 30)
                         {
                             targets.Remove(item.Key);
                         }
@@ -301,6 +270,7 @@ namespace IngameScript
                 {
                     try
                     {
+                        MyDetectedEntityInfo? focus;
                         var wcTargets = new Dictionary<MyDetectedEntityInfo, float>();
                         var wcObstructions = new List<MyDetectedEntityInfo>();
 
@@ -308,17 +278,35 @@ namespace IngameScript
 
                         foreach (var target in wcTargets)
                         {
-                            AddTarget(target.Key, target.Value);
+                            if (target.Key.EntityId == 0) continue;
+
+                            targets[target.Key.EntityId] = TargetData.FromMyDetectedEntityInfo(target.Key, target.Value);
+
+                            focus = wcapi.GetAiFocus(target.Key.EntityId);
+
+                            if (focus.HasValue && focus.Value.EntityId != 0)
+                            {
+                                targets[target.Key.EntityId].Targeting = focus.Value.EntityId;
+                            }
                         }
 
                         wcapi.GetObstructions(program.Me, wcObstructions);
 
                         foreach (var obstruction in wcObstructions)
                         {
-                            AddTarget(obstruction);
+                            if (obstruction.EntityId == 0) continue;
+
+                            targets[obstruction.EntityId] = TargetData.FromMyDetectedEntityInfo(obstruction);
+
+                            focus = wcapi.GetAiFocus(obstruction.EntityId);
+
+                            if (focus.HasValue && focus.Value.EntityId != 0)
+                            {
+                                targets[obstruction.EntityId].Targeting = focus.Value.EntityId;
+                            }
                         }
 
-                        var focus = wcapi.GetAiFocus(program.Me.CubeGrid.EntityId);
+                        focus = wcapi.GetAiFocus(program.Me.CubeGrid.EntityId);
 
                         if (focus.HasValue && focus.Value.EntityId != 0)
                         {
@@ -327,7 +315,7 @@ namespace IngameScript
 
                         targets.Remove(program.Me.CubeGrid.EntityId);
 
-                        return Response.Transition(ProcessTargetList);
+                        return TransitionTo(ProcessTargetList);
                     }
                     catch (Exception error)
                     {
@@ -337,7 +325,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
                 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response ProcessTargetList(ISignal signal)
@@ -436,7 +424,7 @@ namespace IngameScript
                             {
                                 if (target.Relation != Relation.None && target.Distance > calculatedMaxRange)
                                 {
-                                    float divisor = target.Distance < 5000 ? 1000 : 5000;
+                                    float divisor = target.Distance < 1000 ? 500 : 5000;
                                     int multiplier = (int)(target.Distance / divisor + 1);
 
                                     calculatedMaxRange = divisor * multiplier;
@@ -468,7 +456,7 @@ namespace IngameScript
                         targetsAbovePlane.Sort(CompareTargetEntityIDs);
                         targetsBelowPlane.Sort(CompareTargetEntityIDs);
 
-                        return Response.Transition(UpdateEnemyLCD);
+                        return TransitionTo(UpdateEnemyLCD);
                     }
                     catch (Exception error)
                     {
@@ -478,7 +466,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
                 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response UpdateEnemyLCD(ISignal signal)
@@ -523,7 +511,7 @@ namespace IngameScript
                             surface.WriteText(string.Join("\n", lines));
                         }
 
-                        return Response.Transition(UpdateFriendLCD);
+                        return TransitionTo(UpdateFriendLCD);
                     }
                     catch (Exception error)
                     {
@@ -533,7 +521,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
                 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response UpdateFriendLCD(ISignal signal)
@@ -576,7 +564,7 @@ namespace IngameScript
                             surface.WriteText(string.Join("\n", lines));
                         }
 
-                        return Response.Transition(UpdateRadar);
+                        return TransitionTo(UpdateRadar);
                     }
                     catch (Exception error)
                     {
@@ -586,7 +574,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
                 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response UpdateRadar(ISignal signal)
@@ -621,7 +609,7 @@ namespace IngameScript
                         }
                         else
                         {
-                            return Response.Transition(UpdateAlarm);
+                            return TransitionTo(UpdateAlarm);
                         }
                     }
                     catch (Exception error)
@@ -632,7 +620,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
                 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             protected Response UpdateAlarm(ISignal signal)
@@ -647,7 +635,7 @@ namespace IngameScript
                         if (warningGroup != null) UpdateGroup(warningGroup, enemyDetected);
                         if (alarmGroup != null) UpdateGroup(alarmGroup, enemyClose);
 
-                        return Response.Transition(GetTargets);
+                        return TransitionTo(GetTargets);
                     }
                     catch (Exception error)
                     {
@@ -657,7 +645,7 @@ namespace IngameScript
                     return Response.Handled;
                 }
                 
-                return Response.Parent(Active);
+                return Response.Unhandled;
             }
 
             private void GetSurfacesForProvider(IMyTextSurfaceProvider provider)
@@ -669,26 +657,14 @@ namespace IngameScript
                 {
                     for (int i = 0; i < provider.SurfaceCount; i++)
                     {
-                        string value = ini.Get(NAME, $"Surface{i}").ToString("");
+                        string value = ini.Get(NAME, $"Surface{i}").ToString();
 
                         switch (value)
                         {
-                            case "Main":
-                                radarSurfaces.Add(provider.GetSurface(i));
-
-                                break;
-                            case "Enemy":
-                                enemySurfaces.Add(provider.GetSurface(i));
-
-                                break;
-                            case "Friend":
-                                friendSurfaces.Add(provider.GetSurface(i));
-
-                                break;
-                            default:
-                                value = "";
-
-                                break;
+                            case "Main": radarSurfaces.Add(provider.GetSurface(i)); break;
+                            case "Enemy": enemySurfaces.Add(provider.GetSurface(i)); break;
+                            case "Friend": friendSurfaces.Add(provider.GetSurface(i)); break;
+                            default: value = ""; break;
                         }
 
                         ini.Set(NAME, $"Surface{i}", value);
@@ -698,87 +674,6 @@ namespace IngameScript
                 ini.SetSectionComment(NAME, "Options: Main, Enemy, Friend");
 
                 block.CustomData = ini.ToString();
-            }
-
-            private void AddTarget(MyDetectedEntityInfo info, float threat = 0)
-            {
-                if (info.EntityId != 0 && !targets.ContainsKey(info.EntityId))
-                {
-                    TargetData target = new TargetData
-                    {
-                        Threat = threat,
-                        Name = info.Name,
-                        Position = info.Position,
-                        Velocity = info.Velocity,
-                    };
-
-                    var focus = wcapi.GetAiFocus(info.EntityId);
-
-                    if (focus.HasValue && focus.Value.EntityId != 0)
-                    {
-                        target.Targeting = focus.Value.EntityId;
-                    }
-
-                    switch (info.Type)
-                    {
-                        case MyDetectedEntityType.CharacterHuman:
-                            target.Type = "P";
-                            
-                            break;
-                        case MyDetectedEntityType.LargeGrid:
-                            target.Type = "L";
-                            
-                            break;
-                        case MyDetectedEntityType.SmallGrid:
-                            target.Type = "S";
-                            
-                            break;
-                        default:
-                            target.Type = "?";
-                            
-                            break;
-                    }
-
-                    switch (info.Relationship)
-                    {
-                        case MyRelationsBetweenPlayerAndBlock.Enemies:
-                            target.Relation = Relation.Hostile;
-
-                            break;
-
-                        case MyRelationsBetweenPlayerAndBlock.Owner:
-                        case MyRelationsBetweenPlayerAndBlock.FactionShare:
-                        case MyRelationsBetweenPlayerAndBlock.Friends:
-                            target.Relation = Relation.Allied;
-
-                            break;
-
-                        default:
-                            target.Threat = -1;
-
-                            if (info.Name == "MyVoxelMap")
-                            {
-                                target.Relation = Relation.None;
-
-                                break;
-                            }
-
-                            if (info.Type == MyDetectedEntityType.Unknown)
-                            {
-                                target.Relation = Relation.Allied;
-
-                                break;
-                            }
-
-                            target.Relation = Relation.Neutral;
-
-                            break;
-                    }
-
-                    target.LastSeen = DateTime.Now;
-
-                    targets[info.EntityId] = target;
-                }
             }
 
             private Color SuitColor(Color original)

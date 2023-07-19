@@ -1,5 +1,5 @@
-﻿Tango's Radar v3.4.6
-=====================
+﻿Tango's Radar v3.4.10
+======================
 
 This script displays a radar using the WeaponCore PB API to get targeting data. It can also
 display a readout of enemy targets on a separate screen as well as a readout of friendlies

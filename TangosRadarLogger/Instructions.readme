@@ -1,0 +1,13 @@
+﻿Tango's Radar Logger v3.4.10
+=============================
+
+This script records and displays radar data from Tango's Radar Extender. It allows you to
+view targetting data in some detail as well as grab GPS coordinates of any grids last known
+location.
+
+Instructions:
+
+Put script in PB and set the appropriate broadcast channel for the Radar Extender you'd like to
+collect data from.
+
+Settings in PBs CustomData.
