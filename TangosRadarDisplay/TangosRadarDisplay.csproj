@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{07D9B210-9DC2-4336-A32F-6F9061CBC232}</ProjectGuid>
+    <ProjectGuid>{B30D6701-B89E-4599-A2C0-F87AB5BD4C94}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>IngameScript</RootNamespace>
-    <AssemblyName>TangosRadar</AssemblyName>
+    <AssemblyName>TangosRadarDisplay</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -50,15 +50,13 @@
     <AdditionalFiles Include="thumb.png" />
     <AdditionalFiles Include="MDK\whitelist.cache" />
     <Compile Include="Settings.cs" />
-    <Compile Include="TangosRadar.cs" />
+    <Compile Include="TangosRadarDisplay.cs" />
   </ItemGroup>
   <Import Project="..\TangosCore\TangosCore.projitems" Label="Shared" />
-  <Import Project="..\TangosWeaponCore\TangosWeaponCore.projitems" Label="Shared" />
+  <Import Project="..\TangosRadarRenderer\TangosRadarRenderer.projitems" Label="Shared" />
   <Import Project="..\TangosMyIniExtensions\TangosMyIniExtensions.projitems" Label="Shared" />
   <Import Project="..\TangosTargetData\TangosTargetData.projitems" Label="Shared" />
   <Import Project="..\TangosVector2Extensions\TangosVector2Extensions.projitems" Label="Shared" />
-  <Import Project="..\TangosValueDebouncer\TangosValueDebouncer.projitems" Label="Shared" />
-  <Import Project="..\TangosRadarRenderer\TangosRadarRenderer.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">
     <Copy SourceFiles="MDK\MDK.options.props" DestinationFolder="$(TargetDir)\MDK" />

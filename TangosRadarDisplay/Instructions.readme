@@ -1,0 +1,25 @@
+﻿Tango's Radar Display v3.4.12
+==============================
+
+This script displays a radar using the WeaponCore targeting data from Tango's Radar Extender. It
+can also display a readout of enemy targets on a separate screen as well as a readout of friendlies
+on yet another screen.
+
+Instructions:
+
+This script requires a ship controller and a screen or three (can be screens on a cockpit).
+
+Put [Radar:Control] on your cockpit or remote control block.
+Put [Radar:LCD] on any screen providing blocks you want to use for any of the 3 outputs.
+
+Edit the custom data on all screen providing blocks to set up which output type to use.
+
+Example:
+```
+[TangosRadarDisplay]
+Surface0=Main
+Surface1=Enemy
+Surface2=Friend
+```
+
+Settings in PBs CustomData.

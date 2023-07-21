@@ -29,17 +29,16 @@ namespace IngameScript
             private readonly Dictionary<long, TargetData> targets = new Dictionary<long, TargetData>();
             
             private readonly List<IMyTextSurface> textSurfaces = new List<IMyTextSurface>();
-
-            private readonly Program program;
-
-            private readonly IMyShipController controller;
-            private readonly IMyBroadcastListener listener;
             private readonly List<Relation> relationList = new List<Relation>
             {
                 Relation.Hostile,
                 Relation.Neutral,
                 Relation.Allied,
             };
+
+            private readonly IMyShipController controller;
+            private readonly IMyBroadcastListener listener;
+            
             private List<TargetData> Entities =>
                 (
                     from target in targets.Values
@@ -48,12 +47,21 @@ namespace IngameScript
                     select target
                 ).ToList();
 
-            private int relationSelection = 0;
-            private int entitySelection = 0;
+            private int entityPageSize;
 
-            public TangosRadarLogger(Program program)
+            private int relationSelection = 0;
+            private int entityPageStart = 0;
+            private int entityPageOffset = 0;
+
+            private int EntityPageEnd => Math.Min(entityPageSize, Entities.Count);
+            private int EntitySelection => entityPageStart + entityPageOffset;
+
+            public TangosRadarLogger(Program program) : base(program)
             {
-                this.program = program;
+                surfaceTypes = new Dictionary<string, Action<IMyTextSurface>>
+                {
+                    { "Main", surface => textSurfaces.Add(surface) },
+                };
 
                 RegisterChildren(
                     Active,
@@ -103,14 +111,7 @@ namespace IngameScript
                         {
                             var block = provider as IMyTerminalBlock;
 
-                            if (block.CustomName.Contains(Settings.Global.LCDTag) && block.IsSameConstructAs(program.Me))
-                            {
-                                GetSurfacesForProvider(provider);
-
-                                return true;
-                            }
-
-                            return false;
+                            return block.CustomName.Contains(Settings.Global.LCDTag) && block.IsSameConstructAs(program.Me);
                         }
                     );
 
@@ -118,6 +119,12 @@ namespace IngameScript
                     {
                         throw new Exception($"No text surface with {Settings.Global.LCDTag} tag found.");
                     }
+                    else if (surfaceProviders.Count > 1)
+                    {
+                        throw new Exception($"Too many surfaces with {Settings.Global.LCDTag} tag found.");
+                    }
+
+                    GetSurfaces(surfaceProviders[0]);
 
                     program.Runtime.UpdateFrequency = UpdateFrequency.Update10;
                 }
@@ -221,19 +228,20 @@ namespace IngameScript
                         case "apply": return TransitionTo(ListView);
                     }
                 }
+                
+                if (signal is Exit)
+                {
+                    entityPageStart = 0;
+                    entityPageOffset = 0;
+
+                    return Response.Handled;
+                }
 
                 return Response.Unhandled;
             }
 
             protected Response ListView(ISignal signal)
             {
-                if (signal is Enter)
-                {
-                    entitySelection = 0;
-
-                    return Response.Handled;
-                }
-
                 if (signal is UpdateSource)
                 {
                     RenderList();
@@ -248,17 +256,27 @@ namespace IngameScript
                     switch (command.Argument)
                     {
                         case "up":
-                            entitySelection--;
-
-                            if (entitySelection < 0) entitySelection = 0;
+                            if (entityPageOffset > 0)
+                            {
+                                entityPageOffset--;
+                            }
+                            else if (entityPageStart > 0)
+                            {
+                                entityPageStart--;
+                            }
 
                             RenderList();
 
                             return Response.Handled;
                         case "down":
-                            entitySelection++;
-
-                            if (entitySelection >= targets.Count) entitySelection = targets.Count - 1;
+                            if (entityPageOffset < EntityPageEnd - 1)
+                            {
+                                entityPageOffset++;
+                            }
+                            else if (EntitySelection < Entities.Count - 1)
+                            {
+                                entityPageStart++;
+                            }
 
                             RenderList();
 
@@ -293,72 +311,18 @@ namespace IngameScript
                 return Response.Unhandled;
             }
 
-            //private void Parse(string source)
-            //{
-            //    var ini = new MyIni();
-
-            //    if (ini.TryParse(source))
-            //    {
-            //        var ids = new List<string>();
-
-            //        ini.GetSections(ids);
-
-            //        Logger.Log($"Parsing {ids.Count} targets.");
-
-            //        foreach (var id in ids)
-            //        {
-            //            var entityId = long.Parse(id);
-            //            var target = new TargetData
-            //            {
-            //                Name = ini.Get(id, "Name").ToString(),
-            //                Type = ini.Get(id, "Type").ToString(),
-
-            //                Position = ini.Get(id, "Position").ToVector3D(),
-            //                Velocity = ini.Get(id, "Velocity").ToVector3D(),
-
-            //                Threat = ini.Get(id, "Threat").ToFloat(),
-
-            //                Relation = (Relation)ini.Get(id, "Relation").ToByte(),
-
-            //                LastSeen = ini.Get(id, "LastSeen").ToDateTime(),
-            //            };
-
-            //            targets[entityId] = target;
-            //        }
-            //    }
-            //}
-
-            private void GetSurfacesForProvider(IMyTextSurfaceProvider provider)
-            {
-                var block = provider as IMyTerminalBlock;
-                var ini = new MyIni();
-
-                if (ini.TryParse(block.CustomData))
-                {
-                    for (int i = 0; i < provider.SurfaceCount; i++)
-                    {
-                        string value = ini.Get(NAME, $"Surface{i}").ToString();
-
-                        switch (value)
-                        {
-                            case "Main": textSurfaces.Add(provider.GetSurface(i)); break;
-                            default: value = ""; break;
-                        }
-
-                        ini.Set(NAME, $"Surface{i}", value);
-                    }
-                }
-
-                ini.SetSectionComment(NAME, "Options: Main");
-
-                block.CustomData = ini.ToString();
-            }
-
-            private void Info()
+            override
+            protected void Info()
             {
                 var text = new StringBuilder()
                 .AppendLine($"{NAME} v{VERSION}")
                 .AppendLine("===================")
+                .AppendLine()
+                .AppendLine($"entityPageSize: {entityPageSize}")
+                .AppendLine($"entityPageStart: {entityPageStart}")
+                .AppendLine($"entityPageOffset: {entityPageOffset}")
+                .AppendLine($"EntityPageEnd: {EntityPageEnd}")
+                .AppendLine($"EntitySelection: {EntitySelection}")
                 .AppendLine()
                 .AppendLine($"Task: {CurrentStateName}")
                 .AppendLine()
@@ -382,6 +346,7 @@ namespace IngameScript
                 foreach (var surface in textSurfaces)
                 {
                     surface.ContentType = ContentType.TEXT_AND_IMAGE;
+                    surface.Font = "Monospace";
 
                     surface.WriteText(text);
                 }
@@ -389,21 +354,30 @@ namespace IngameScript
 
             private void RenderList()
             {
-                var text = new StringBuilder()
-                .AppendLine($"{RelationName(relationList[relationSelection])} Entities Seen: {Entities.Count}");
-
-                for (var i = 0; i < Entities.Count; i++)
                 {
-                    var entity = Entities[i];
-                    var leader = entitySelection == i ? ">" : " ";
-                    var identifier = string.IsNullOrWhiteSpace(entity.Name) ? "Unknown Name" : entity.Name;
+                    var surface = textSurfaces[0];
+                    var textSize = surface.MeasureStringInPixels(new StringBuilder("W"), "Monospace", surface.FontSize);
 
-                    text.AppendLine($"{leader}[{entity.ThreatScore,2:D}:{entity.Type}] {identifier}");
+                    entityPageSize = (int)Math.Floor(surface.SurfaceSize.Y / textSize.Y) - 1;
+                }
+
+                var text = new StringBuilder();
+
+                for (var i = 0; i < EntityPageEnd; i++)
+                {
+                    var index = entityPageStart + i;
+                    var entity = Entities[index];
+                    var leader = EntitySelection == index ? ">" : " ";
+                    var identifier = string.IsNullOrWhiteSpace(entity.Name) ? "Unknown Name" : entity.Name;
+                    var line = 1 + index;
+
+                    text.AppendLine($"{leader}{line,2}. [{entity.ThreatScore,2:D}:{entity.Type}] {identifier}");
                 }
 
                 foreach (var surface in textSurfaces)
                 {
                     surface.ContentType = ContentType.TEXT_AND_IMAGE;
+                    surface.Font = "Monospace";
 
                     surface.WriteText(text);
                 }
@@ -411,7 +385,7 @@ namespace IngameScript
 
             private void RenderDetails()
             {
-                var entity = Entities[entitySelection];
+                var entity = Entities[EntitySelection];
                 var identifier = string.IsNullOrWhiteSpace(entity.Name) ? "Unknown Name" : entity.Name;
                 
                 var text = new StringBuilder()
@@ -421,11 +395,12 @@ namespace IngameScript
                 .AppendLine($"Threat: {entity.ThreatScore}")
                 .AppendLine($"LastSeen: {entity.Age.TotalMinutes:N0} minutes ago")
                 .AppendLine()
-                .AppendLine($"GPS:{identifier}:{entity.Position.X:N2}:{entity.Position.Y:N2}:{entity.Position.Z:N2}:#FF00FFFF:");
+                .AppendLine($"GPS:{identifier}:{entity.Position.X:#.00}:{entity.Position.Y:#.00}:{entity.Position.Z:#.00}:#FF00FFFF:");
 
                 foreach (var surface in textSurfaces)
                 {
                     surface.ContentType = ContentType.TEXT_AND_IMAGE;
+                    surface.Font = "Monospace";
 
                     surface.WriteText(text);
                 }

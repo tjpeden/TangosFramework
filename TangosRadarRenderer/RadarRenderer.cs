@@ -22,6 +22,17 @@ namespace IngameScript
 {
     partial class Program
     {
+        public interface IRadarDataProvider
+        {
+            TargetData GetTarget(long id);
+            List<long> GetTargetsBelowPlane();
+            List<long> GetTargetsAbovePlane();
+            int GetEnemyCount();
+            int GetFriendlyCount();
+            float GetMaxRange();
+            string GetCurrentTargetName(string defaultValue);
+        }
+
         public class RadarRenderer
         {
             const float TARGET_ELEVATION_LINE_WIDTH = 2f;
@@ -32,7 +43,7 @@ namespace IngameScript
             readonly Vector2 SHIP_ICON_SIZE = new Vector2(8, 4);
             readonly Vector2 SHADOW_OFFSET = new Vector2(2, 2);
 
-            readonly TangosRadar machine;
+            readonly IRadarDataProvider provider;
 
             float? previousProjectionAngle;
             float projectionCos;
@@ -42,9 +53,9 @@ namespace IngameScript
 
             bool clearSpriteCache = true;
 
-            public RadarRenderer(TangosRadar machine)
+            public RadarRenderer(IRadarDataProvider provider)
             {
-                this.machine = machine;
+                this.provider = provider;
             }
 
             public void ClearSpriteCache()
@@ -84,18 +95,18 @@ namespace IngameScript
 
                     frame.Add(sprite);
 
-                    foreach (var id in machine.targetsBelowPlane)
+                    foreach (var id in provider.GetTargetsBelowPlane())
                     {
-                        var target = machine.targets[id];
+                        var target = provider.GetTarget(id);
 
                         DrawTargetIcon(frame, center, planeSize, target, minScale);
                     }
 
                     DrawPlane(frame, center, planeSize, viewportSize, minScale);
 
-                    foreach (var id in machine.targetsAbovePlane)
+                    foreach (var id in provider.GetTargetsAbovePlane())
                     {
-                        var target = machine.targets[id];
+                        var target = provider.GetTarget(id);
 
                         DrawTargetIcon(frame, center, planeSize, target, minScale);
                     }
@@ -123,7 +134,7 @@ namespace IngameScript
 
             private void DrawPlane(MySpriteDrawFrame frame, Vector2 center, Vector2 planeSize, Vector2 viewportSize, float scale)
             {
-                var title = machine.targets.ContainsKey(machine.currentTarget) ? machine.targets[machine.currentTarget].Name : "No Target";
+                var title = provider.GetCurrentTargetName("No Target");
                 var viewportHalfSize = viewportSize * 0.5f;
                 var titlebarHeight = scale * TITLEBAR_HEIGHT;
                 
@@ -320,7 +331,7 @@ namespace IngameScript
                 var viewportHalfSize = viewportSize * 0.5f;
                 var shadowOffset = scale * SHADOW_OFFSET;
 
-                var rangeSprite = new MySprite(SpriteType.TEXT, $"Range: {machine.MaxRange:N0}")
+                var rangeSprite = new MySprite(SpriteType.TEXT, $"Range: {provider.GetMaxRange():N0}")
                 {
                     Position = center + new Vector2(0, -viewportHalfSize.Y + (60 * scale)),
                     RotationOrScale = textSize,
@@ -331,7 +342,7 @@ namespace IngameScript
 
                 frame.Add(rangeSprite);
 
-                var enemySprite = new MySprite(SpriteType.TEXT, $"Enemies: {machine.EnemyTargetCount}")
+                var enemySprite = new MySprite(SpriteType.TEXT, $"Enemies: {provider.GetEnemyCount()}")
                 {
                     Position = center + new Vector2(-(viewportHalfSize.X * 0.5f) + 10, viewportHalfSize.Y - (70 * scale)) + shadowOffset,
                     RotationOrScale = textSize,
@@ -347,7 +358,7 @@ namespace IngameScript
 
                 frame.Add(enemySprite);
 
-                var friendlySprite = new MySprite(SpriteType.TEXT, $"Friendlies: {machine.FriendlyTargetCount}")
+                var friendlySprite = new MySprite(SpriteType.TEXT, $"Friendlies: {provider.GetFriendlyCount()}")
                 {
                     Position = center + new Vector2(viewportHalfSize.X * 0.5f - 10, viewportHalfSize.Y - (70 * scale)) + shadowOffset,
                     RotationOrScale = textSize,

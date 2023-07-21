@@ -25,6 +25,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{5AB34B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TangosRadarLogger", "TangosRadarLogger\TangosRadarLogger.csproj", "{A5BBC205-375D-4EAC-A732-725F0D90C9E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TangosRadarDisplay", "TangosRadarDisplay\TangosRadarDisplay.csproj", "{B30D6701-B89E-4599-A2C0-F87AB5BD4C94}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "TangosRadarRenderer", "TangosRadarRenderer\TangosRadarRenderer.shproj", "{A16C3190-8E9C-4517-8FA7-CBDC5CB96C5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -35,6 +39,8 @@ Global
 		{A88309EF-24B3-460A-9C6C-514C52C9E47D}.Debug|x64.ActiveCfg = Debug|x64
 		{A5BBC205-375D-4EAC-A732-725F0D90C9E5}.Debug|x64.ActiveCfg = Debug|x64
 		{A5BBC205-375D-4EAC-A732-725F0D90C9E5}.Debug|x64.Build.0 = Debug|x64
+		{B30D6701-B89E-4599-A2C0-F87AB5BD4C94}.Debug|x64.ActiveCfg = Debug|x64
+		{B30D6701-B89E-4599-A2C0-F87AB5BD4C94}.Debug|x64.Build.0 = Debug|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,6 +52,7 @@ Global
 		{F9105588-9A5A-4339-A5A4-99B4944A438D} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
 		{F5597931-C01D-4659-9725-1D3C6B135BC0} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
 		{4B275B06-D6D9-4526-BDB4-D54CD8CDB538} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
+		{A16C3190-8E9C-4517-8FA7-CBDC5CB96C5C} = {5AB34B43-8187-4E4F-8A61-A432E231F02A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7EDC41D5-DAE7-4ACB-9D63-FA027130D69B}
@@ -53,6 +60,7 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		TangosCore\TangosCore.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
 		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
+		TangosRadarRenderer\TangosRadarRenderer.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
 		TangosTargetData\TangosTargetData.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
 		TangosValueDebouncer\TangosValueDebouncer.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
 		TangosVector2Extensions\TangosVector2Extensions.projitems*{07d9b210-9dc2-4336-a32f-6f9061cbc232}*SharedItemsImports = 4
@@ -64,10 +72,16 @@ Global
 		TangosTargetData\TangosTargetData.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
 		TangosWeaponCore\TangosWeaponCore.projitems*{7e1284ed-876b-40f3-8120-d333e096ac85}*SharedItemsImports = 4
 		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{7f630268-880b-4847-89cf-157598e0769f}*SharedItemsImports = 13
+		TangosRadarRenderer\TangosRadarRenderer.projitems*{a16c3190-8e9c-4517-8fa7-cbdc5cb96c5c}*SharedItemsImports = 13
 		TangosCore\TangosCore.projitems*{a5bbc205-375d-4eac-a732-725f0d90c9e5}*SharedItemsImports = 4
 		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{a5bbc205-375d-4eac-a732-725f0d90c9e5}*SharedItemsImports = 4
 		TangosTargetData\TangosTargetData.projitems*{a5bbc205-375d-4eac-a732-725f0d90c9e5}*SharedItemsImports = 4
 		TangosCore\TangosCore.projitems*{a88309ef-24b3-460a-9c6c-514c52c9e47d}*SharedItemsImports = 4
+		TangosCore\TangosCore.projitems*{b30d6701-b89e-4599-a2c0-f87ab5bd4c94}*SharedItemsImports = 4
+		TangosMyIniExtensions\TangosMyIniExtensions.projitems*{b30d6701-b89e-4599-a2c0-f87ab5bd4c94}*SharedItemsImports = 4
+		TangosRadarRenderer\TangosRadarRenderer.projitems*{b30d6701-b89e-4599-a2c0-f87ab5bd4c94}*SharedItemsImports = 4
+		TangosTargetData\TangosTargetData.projitems*{b30d6701-b89e-4599-a2c0-f87ab5bd4c94}*SharedItemsImports = 4
+		TangosVector2Extensions\TangosVector2Extensions.projitems*{b30d6701-b89e-4599-a2c0-f87ab5bd4c94}*SharedItemsImports = 4
 		TangosCore\TangosCore.projitems*{b59d3b84-f999-4f45-83ea-a22bd23d5f3a}*SharedItemsImports = 13
 		TangosTargetData\TangosTargetData.projitems*{f5597931-c01d-4659-9725-1d3c6b135bc0}*SharedItemsImports = 13
 		TangosVector2Extensions\TangosVector2Extensions.projitems*{f9105588-9a5a-4339-a5a4-99b4944a438d}*SharedItemsImports = 13

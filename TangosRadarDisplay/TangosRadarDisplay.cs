@@ -22,20 +22,12 @@ namespace IngameScript
 {
     partial class Program
     {
-        public class TangosRadar : StateMachine, IRadarDataProvider
+        public class TangosRadarDisplay : StateMachine, IRadarDataProvider
         {
             private readonly IMyShipController controller;
             private readonly IMyBroadcastListener listener;
 
-            private readonly IMyBlockGroup warningGroup;
-            private readonly IMyBlockGroup alarmGroup;
-
-            private readonly WCPBAPI wcapi = new WCPBAPI();
-
             private readonly RadarRenderer renderer;
-
-            private readonly Debounce enemyDetected = new Debounce();
-            private readonly Debounce enemyClose = new Debounce();
 
             private readonly Dictionary<long, TargetData> targets = new Dictionary<long, TargetData>();
             private readonly Dictionary<Relation, string> spriteMap = new Dictionary<Relation, string>
@@ -45,8 +37,6 @@ namespace IngameScript
                 { Relation.Neutral, "Triangle" },
                 { Relation.Hostile, "Circle" },
             };
-
-            private readonly List<IMyTextSurfaceProvider> surfaceProviders = new List<IMyTextSurfaceProvider>();
 
             private readonly List<IMyTextSurface> radarSurfaces = new List<IMyTextSurface>();
             private readonly List<IMyTextSurface> enemySurfaces = new List<IMyTextSurface>();
@@ -65,7 +55,7 @@ namespace IngameScript
 
             public long currentTarget = 0;
 
-            public TangosRadar(Program program) : base(program)
+            public TangosRadarDisplay(Program program) : base(program)
             {
                 surfaceTypes = new Dictionary<string, Action<IMyTextSurface>>
                 {
@@ -82,12 +72,10 @@ namespace IngameScript
                     Active,
                     new List<Func<ISignal, Response>>
                     {
-                        GetTargets,
                         ProcessTargetList,
                         UpdateEnemyLCD,
                         UpdateFriendLCD,
                         UpdateRadar,
-                        UpdateAlarm,
                     }
                 );
 
@@ -107,10 +95,16 @@ namespace IngameScript
                     {
                         controller = controllers[0];
                     }
+                    else if (controllers.Count > 1)
+                    {
+                        throw new Exception("Too many controllers tagged. Please tag only one.");
+                    }
                     else
                     {
                         throw new Exception("No tagged controller found.");
                     }
+
+                    var surfaceProviders = new List<IMyTextSurfaceProvider>();
 
                     program.GridTerminalSystem.GetBlocksOfType(
                         surfaceProviders,
@@ -145,20 +139,6 @@ namespace IngameScript
 
                     Logger.Log($"Enemy Surfaces found: {enemySurfaces.Count}");
                     Logger.Log($"Friend Surfaces found: {friendSurfaces.Count}");
-
-                    warningGroup = program.GridTerminalSystem.GetBlockGroupWithName(Settings.Global.WarningGroup);
-
-                    if (warningGroup == null)
-                    {
-                        Logger.Log("Warning group not configured.");
-                    }
-
-                    alarmGroup = program.GridTerminalSystem.GetBlockGroupWithName(Settings.Global.AlarmGroup);
-
-                    if (alarmGroup == null)
-                    {
-                        Logger.Log("Alarm group not configured.");
-                    }
 
                     program.Runtime.UpdateFrequency = UpdateFrequency.Update10;
                 }
@@ -201,38 +181,7 @@ namespace IngameScript
             override
             protected Response Initial(ISignal signal)
             {
-                return TransitionTo(Activate);
-            }
-
-            protected Response Activate(ISignal signal)
-            {
-                if (signal is UpdateSource)
-                {
-                    try
-                    {
-                        if (wcapi.Activate(program.Me))
-                        {
-                            Logger.Log("WeaponCore PB API activated.");
-
-                            return TransitionTo(GetTargets);
-                        }
-                        else
-                        {
-                            throw new Exception("Unabled to activate WeaponCore PB API.");
-                        }
-                    }
-                    catch (Exception error)
-                    {
-                        Logger.Log($"Error:\n{error.Message}");
-                    }
-                    finally
-                    {
-                        Info();
-                    }
-                    return Response.Handled;
-                }
-
-                return Response.Unhandled;
+                return TransitionTo(ProcessTargetList);
             }
 
             protected Response Active(ISignal signal)
@@ -246,6 +195,8 @@ namespace IngameScript
                         if (message.Data is string)
                         {
                             TargetData.Parse(message.Data as string, targets);
+
+                            return TransitionTo(ProcessTargetList);
                         }
                     }
 
@@ -255,14 +206,14 @@ namespace IngameScript
                 if (signal is UpdateInfo && Settings.Global.Debug)
                 {
                     Info();
-                    
+
                     return Response.Handled;
                 }
 
                 return Response.Unhandled;
             }
 
-            protected Response GetTargets(ISignal signal)
+            protected Response ProcessTargetList(ISignal signal)
             {
                 if (signal is Enter)
                 {
@@ -274,75 +225,6 @@ namespace IngameScript
                         }
                     }
 
-                    return Response.Handled;
-                }
-
-                if (signal is UpdateSource)
-                {
-                    try
-                    {
-                        MyDetectedEntityInfo? focus;
-                        var wcTargets = new Dictionary<MyDetectedEntityInfo, float>();
-                        var wcObstructions = new List<MyDetectedEntityInfo>();
-
-                        wcapi.GetSortedThreats(program.Me, wcTargets);
-
-                        foreach (var target in wcTargets)
-                        {
-                            if (target.Key.EntityId == 0) continue;
-
-                            targets[target.Key.EntityId] = TargetData.FromMyDetectedEntityInfo(target.Key, target.Value);
-
-                            focus = wcapi.GetAiFocus(target.Key.EntityId);
-
-                            if (focus.HasValue && focus.Value.EntityId != 0)
-                            {
-                                targets[target.Key.EntityId].Targeting = focus.Value.EntityId;
-                            }
-                        }
-
-                        wcapi.GetObstructions(program.Me, wcObstructions);
-
-                        foreach (var obstruction in wcObstructions)
-                        {
-                            if (obstruction.EntityId == 0) continue;
-
-                            targets[obstruction.EntityId] = TargetData.FromMyDetectedEntityInfo(obstruction);
-
-                            focus = wcapi.GetAiFocus(obstruction.EntityId);
-
-                            if (focus.HasValue && focus.Value.EntityId != 0)
-                            {
-                                targets[obstruction.EntityId].Targeting = focus.Value.EntityId;
-                            }
-                        }
-
-                        focus = wcapi.GetAiFocus(program.Me.CubeGrid.EntityId);
-
-                        if (focus.HasValue && focus.Value.EntityId != 0)
-                        {
-                            currentTarget = focus.Value.EntityId;
-                        }
-
-                        targets.Remove(program.Me.CubeGrid.EntityId);
-
-                        return TransitionTo(ProcessTargetList);
-                    }
-                    catch (Exception error)
-                    {
-                        HandleError(error);
-                    }
-
-                    return Response.Handled;
-                }
-                
-                return Response.Unhandled;
-            }
-
-            protected Response ProcessTargetList(ISignal signal)
-            {
-                if (signal is Enter)
-                {
                     enemyTargets.Clear();
                     friendTargets.Clear();
                     targetsAbovePlane.Clear();
@@ -476,7 +358,7 @@ namespace IngameScript
 
                     return Response.Handled;
                 }
-                
+
                 return Response.Unhandled;
             }
 
@@ -531,7 +413,7 @@ namespace IngameScript
 
                     return Response.Handled;
                 }
-                
+
                 return Response.Unhandled;
             }
 
@@ -584,7 +466,7 @@ namespace IngameScript
 
                     return Response.Handled;
                 }
-                
+
                 return Response.Unhandled;
             }
 
@@ -603,7 +485,7 @@ namespace IngameScript
 
                     return Response.Handled;
                 }
-                
+
                 if (signal is UpdateSource)
                 {
                     try
@@ -620,7 +502,7 @@ namespace IngameScript
                         }
                         else
                         {
-                            return TransitionTo(UpdateAlarm);
+                            return TransitionTo(ProcessTargetList);
                         }
                     }
                     catch (Exception error)
@@ -630,32 +512,7 @@ namespace IngameScript
 
                     return Response.Handled;
                 }
-                
-                return Response.Unhandled;
-            }
 
-            protected Response UpdateAlarm(ISignal signal)
-            {
-                if (signal is UpdateSource)
-                {
-                    try
-                    {
-                        enemyDetected.Current = Settings.Global.WarningEnabled && enemyTargets.Count > 0;
-                        enemyClose.Current = Settings.Global.AlarmEnabled && enemyTargets.Any(id => targets[id].Distance < Settings.Global.AlarmThreshold);
-
-                        if (warningGroup != null) UpdateGroup(warningGroup, enemyDetected);
-                        if (alarmGroup != null) UpdateGroup(alarmGroup, enemyClose);
-
-                        return TransitionTo(GetTargets);
-                    }
-                    catch (Exception error)
-                    {
-                        HandleError(error);
-                    }
-
-                    return Response.Handled;
-                }
-                
                 return Response.Unhandled;
             }
 
@@ -682,51 +539,6 @@ namespace IngameScript
                 }
 
                 return result;
-            }
-
-            private void UpdateGroup(IMyBlockGroup group, Debounce value)
-            {
-                var blocks = new List<IMyTerminalBlock>();
-
-                group.GetBlocksOfType<IMyLightingBlock>(blocks);
-
-                foreach (var block in blocks)
-                {
-                    (block as IMyLightingBlock).Enabled = value.Current;
-                }
-
-                group.GetBlocksOfType<IMyTextPanel>(
-                    blocks,
-                    block => {
-                        return !surfaceProviders.Any(provider => (provider as IMyTerminalBlock) == block);
-                    }
-                );
-
-                foreach (var block in blocks)
-                {
-                    (block as IMyTextPanel).Enabled = !value.Current;
-                }
-
-                if (value.Rising)
-                {
-                    blocks.Clear();
-
-                    group.GetBlocksOfType<IMyTimerBlock>(blocks);
-
-                    foreach (var block in blocks)
-                    {
-                        (block as IMyTimerBlock).Trigger();
-                    }
-
-                    blocks.Clear();
-
-                    group.GetBlocksOfType<IMySoundBlock>(blocks);
-
-                    foreach (var block in blocks)
-                    {
-                        (block as IMySoundBlock).Play();
-                    }
-                }
             }
 
             override

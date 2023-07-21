@@ -23,7 +23,7 @@ namespace IngameScript
     partial class Program : MyGridProgram
     {
         public const string NAME = "TangosRadar";
-        public const string VERSION = "3.4.10";
+        public const string VERSION = "3.4.12";
 
         private readonly UpdateType Triggers = UpdateType.Trigger | UpdateType.Terminal | UpdateType.Script | UpdateType.Mod;
         private readonly UpdateType Updates = UpdateType.Once | UpdateType.Update1 | UpdateType.Update10 | UpdateType.Update100;

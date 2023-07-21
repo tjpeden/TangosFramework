@@ -24,7 +24,6 @@ namespace IngameScript
     {
         public class TangosRadarExtender : StateMachine
         {
-            private readonly Program program;
             private readonly WCPBAPI wcapi = new WCPBAPI();
 
             private readonly Dictionary<long, TargetData> targets = new Dictionary<long, TargetData>();
@@ -36,10 +35,8 @@ namespace IngameScript
             private double LastTransmissionSeconds => DateTime.Now.Subtract(LastTransmission).TotalSeconds;
             private bool EnemySighted => targets.Any(pair => pair.Value.Relation == Relation.Hostile);
 
-            public TangosRadarExtender(Program program) : base()
+            public TangosRadarExtender(Program program) : base(program)
             {
-                this.program = program;
-
                 LastTransmission = DateTime.Now;
 
                 RegisterChildren(
@@ -294,16 +291,8 @@ namespace IngameScript
                 return Response.Unhandled;
             }
 
-            private void HandleError(Exception error)
-            {
-                Logger.Log($"Error:\n{error.Message}");
-
-                Info();
-
-                program.Runtime.UpdateFrequency = UpdateFrequency.None;
-            }
-
-            private void Info()
+            override
+            protected void Info()
             {
                 var text = new StringBuilder()
                 .AppendLine($"{NAME} v{VERSION}")

@@ -1,4 +1,4 @@
-﻿Tango's Radar Logger v3.4.10
+﻿Tango's Radar Logger v3.4.12
 =============================
 
 This script records and displays radar data from Tango's Radar Extender. It allows you to
@@ -7,7 +7,17 @@ location.
 
 Instructions:
 
-Put script in PB and set the appropriate broadcast channel for the Radar Extender you'd like to
-collect data from.
+This script requires a ship controller and a screen (can be a screen on a cockpit).
+
+Put [Radar:Control] on your cockpit or remote control block.
+Put [Radar:LCD] on any screen providing blocks you want to use for any of the 3 outputs.
+
+Edit the custom data on all screen providing blocks to set up which output type to use.
+
+Example:
+```
+[TangosRadarLogger]
+Surface0=Main
+```
 
 Settings in PBs CustomData.

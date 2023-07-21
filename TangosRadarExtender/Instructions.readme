@@ -1,9 +1,8 @@
-﻿Tango's Radar Extender v3.4.10
+﻿Tango's Radar Extender v3.4.12
 ===============================
 
-This script displays a radar using the WeaponCore PB API to get targeting data. It can also
-display a readout of enemy targets on a separate screen as well as a readout of friendlies
-on yet another screen.
+This script gathers radar targets using the WeaponCore PB API to get targeting data and broadcasts
+it over antenna.
 
 Instructions:
 

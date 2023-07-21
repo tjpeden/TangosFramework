@@ -22,22 +22,17 @@ namespace IngameScript
 {
     partial class Program : MyGridProgram
     {
-        public const string NAME = "TangosRadarLogger";
+        public const string NAME = "TangosRadarDisplay";
         public const string VERSION = "3.4.12";
 
         private readonly UpdateType Triggers = UpdateType.Trigger | UpdateType.Terminal | UpdateType.Script | UpdateType.Mod;
         private readonly UpdateType Updates = UpdateType.Once | UpdateType.Update1 | UpdateType.Update10 | UpdateType.Update100;
 
-        private readonly TangosRadarLogger machine;
+        private readonly TangosRadarDisplay machine;
 
         public Program()
         {
-            machine = new TangosRadarLogger(this);
-        }
-
-        public void Save()
-        {
-            machine.Save();
+            machine = new TangosRadarDisplay(this);
         }
 
         public void Main(string argument, UpdateType updateSource)
@@ -53,7 +48,7 @@ namespace IngameScript
                 machine.Handle(UpdateInfo.Global);
             }
 
-            if ((updateSource & Triggers) != 0 && argument != "")
+            if ((updateSource & Triggers) != 0)
             {
                 machine.Handle(new TriggerSource { Argument = argument });
             }
