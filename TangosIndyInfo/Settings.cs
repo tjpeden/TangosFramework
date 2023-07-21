@@ -48,7 +48,7 @@ namespace IngameScript
                 ini.Set(NAME, "LCDTag", LCDTag);
                 ini.SetComment(NAME, "LCDTag", "It's highly recommended that you change this");
 
-                return ini.ToString();
+                return ini.ToString() + ini.EndContent;
             }
         }
     }

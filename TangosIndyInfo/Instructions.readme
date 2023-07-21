@@ -1,7 +1,21 @@
-﻿Tango's Indy Info v2.1.2
+﻿Tango's Indy Info v2.1.4
 =========================
 
-This script displays what's queued in each assembler and what's refining
-in each refinery.
+This script displays what's queued in each assembler and what's refining in each refinery.
+
+Instructions:
+
+Put [Indy:LCD] on any screen providing blocks you want to use for any of the 2 outputs.
+
+Edit the custom data on all screen providing blocks to set up which output type to use.
+
+Example:
+```
+[TangosIndyInfo]
+Surface0=Assembler
+Surface1=Refinery
+```
+
+Settings in PBs CustomData.
 
 **Work In Progress**

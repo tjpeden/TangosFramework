@@ -25,17 +25,19 @@ namespace IngameScript
     {
         public class TangosIndyInfo : StateMachine
         {
-            private readonly Program program;
-
             private readonly List<IMyTextSurface> assemblerSurfaces = new List<IMyTextSurface>();
             private readonly List<IMyTextSurface> refinerySurfaces = new List<IMyTextSurface>();
 
             private readonly List<IMyAssembler> assemblers = new List<IMyAssembler>();
             private readonly List<IMyRefinery> refineries = new List<IMyRefinery>();
 
-            public TangosIndyInfo(Program program)
+            public TangosIndyInfo(Program program) : base(program)
             {
-                this.program = program;
+                surfaceTypes = new Dictionary<string, Action<IMyTextSurface>>
+                {
+                    { "Assembler", surface => assemblerSurfaces.Add(surface) },
+                    { "Refinery", surface => refinerySurfaces.Add(surface) },
+                };
 
                 RegisterChildren(
                     Active,
@@ -98,6 +100,7 @@ namespace IngameScript
                 if (signal is UpdateInfo && Settings.Global.Debug)
                 {
                     Info();
+                    
                     return Response.Handled;
                 }
 
@@ -241,67 +244,17 @@ namespace IngameScript
                 return Response.Unhandled;
             }
 
-            private void GetSurfaces(IMyTextSurfaceProvider provider)
+            override
+            protected void Info()
             {
-                var block = provider as IMyTerminalBlock;
-                var ini = new MyIni();
-
-                if (ini.TryParse(block.CustomData))
-                {
-                    for (int i = 0; i < provider.SurfaceCount; i++)
-                    {
-                        var value = ini.Get(NAME, $"Surface{i}").ToString("");
-
-                        switch (value)
-                        {
-                            case "Assembler":
-                                assemblerSurfaces.Add(provider.GetSurface(i));
-
-                                break;
-                            case "Refinery":
-                                refinerySurfaces.Add(provider.GetSurface(i));
-
-                                break;
-                            default:
-                                value = "";
-
-                                break;
-                        }
-
-                        ini.Set(NAME, $"Surface{i}", value);
-                    }
-
-                    ini.SetSectionComment(NAME, "Options: Assembler, Refinery");
-
-                    block.CustomData = ini.ToString();
-                }
-            }
-
-            private void HandleError(Exception error)
-            {
-                Logger.Log($"Error:\n{error.Message}");
-
-                Info();
-
-                program.Runtime.UpdateFrequency = UpdateFrequency.None;
-            }
-
-            private void Info()
-            {
-                var text = new StringBuilder();
-
-                text.AppendLine($"{NAME} v{VERSION}");
-                text.AppendLine("===================");
-
-                text.AppendLine();
-
-                text.AppendLine($"Task: {CurrentStateName}");
-
-                text.AppendLine();
-
-                text.AppendLine("Log:");
-
-                text.AppendLine(Logger.AsString);
+                var text = new StringBuilder()
+                .AppendLine($"{NAME} v{VERSION}")
+                .AppendLine("===================")
+                .AppendLine()
+                .AppendLine($"Task: {CurrentStateName}")
+                .AppendLine()
+                .AppendLine("Log:")
+                .AppendLine(Logger.AsString);
 
                 program.Echo(text.ToString());
             }
