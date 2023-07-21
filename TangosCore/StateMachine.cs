@@ -48,10 +48,16 @@ namespace IngameScript
             private Func<ISignal, Response> current;
             private Func<ISignal, Response> next;
 
+            protected readonly Program program;
+
+            protected Dictionary<string, Action<IMyTextSurface>> surfaceTypes;
+
             public string CurrentStateName => current.Method.Name;
 
-            public StateMachine()
+            public StateMachine(Program program)
             {
+                this.program = program;
+                
                 current = Initial;
                 next = null;
 
@@ -98,6 +104,45 @@ namespace IngameScript
                 this.next = next;
 
                 return Response.Transition;
+            }
+
+            protected void GetSurfaces(IMyTextSurfaceProvider provider)
+            {
+                var block = provider as IMyTerminalBlock;
+                var ini = new MyIni();
+
+                if (ini.TryParse(block.CustomData))
+                {
+                    for (int i = 0; i < provider.SurfaceCount; i++)
+                    {
+                        string value = ini.Get(NAME, $"Surface{i}").ToString();
+
+                        if (surfaceTypes.ContainsKey(value))
+                        {
+                            surfaceTypes[value].Invoke(provider.GetSurface(i));
+                        }
+                        else
+                        {
+                            value = "";
+                        }
+
+                        ini.Set(NAME, $"Surface{i}", value);
+                    }
+                }
+
+                ini.AddSection(NAME);
+                ini.SetSectionComment(NAME, $"Options: {string.Join(", ", surfaceTypes.Keys)}");
+
+                block.CustomData = ini.ToString() + ini.EndContent;
+            }
+
+            protected void HandleError(Exception error)
+            {
+                Logger.Log($"Error:\n{error.Message}");
+
+                Info();
+
+                program.Runtime.UpdateFrequency = UpdateFrequency.None;
             }
 
             private void Transition()
@@ -157,6 +202,7 @@ namespace IngameScript
             }
 
             protected abstract Response Initial(ISignal signal);
+            protected abstract void Info();
         }
     }
 }
