@@ -26,7 +26,7 @@ namespace IngameScript
         {
             public static readonly Settings Global = new Settings();
 
-            public bool Debug { get; private set; } = false;
+            public bool Debug { get; private set; } = true;
 
             public string LCDTag { get; private set; } = "[Indy:LCD]";
 
@@ -46,7 +46,6 @@ namespace IngameScript
                 ini.Set(NAME, "Debug", Debug);
 
                 ini.Set(NAME, "LCDTag", LCDTag);
-                ini.SetComment(NAME, "LCDTag", "It's highly recommended that you change this");
 
                 return ini.ToString() + ini.EndContent;
             }

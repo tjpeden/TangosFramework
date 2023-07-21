@@ -26,7 +26,7 @@ namespace IngameScript
         {
             public static readonly Settings Global = new Settings();
 
-            public bool Debug { get; private set; } = false;
+            public bool Debug { get; private set; } = true;
 
             public string BroadcastTag { get; private set; } = "BroadcastTag";
 

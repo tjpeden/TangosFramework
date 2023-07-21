@@ -26,6 +26,13 @@ namespace IngameScript
         {
             public static readonly Settings Global = new Settings();
 
+            public bool Debug { get; private set; } = true;
+            public bool DrawQuadrants { get; private set; } = true;
+            public bool DrawObstructions { get; private set; } = false;
+            public bool OverrideMaxRange { get; private set; } = false;
+            public bool WarningEnabled { get; private set; } = false;
+            public bool AlarmEnabled { get; private set; } = false;
+
             public string ControlTag { get; private set; } = "[Radar:Control]";
             public string LCDTag { get; private set; } = "[Radar:LCD]";
             public string BroadcastTag { get; private set; } = "BroadcastTag";
@@ -33,14 +40,7 @@ namespace IngameScript
             public string AlarmGroup { get; private set; } = "Radar Alarm";
             public string Font { get; private set; } = "Monospace";
 
-            public bool DrawQuadrants { get; private set; } = false;
-            public bool DrawObstructions { get; private set; } = false;
-            public bool OverrideMaxRange { get; private set; } = false;
-            public bool WarningEnabled { get; private set; } = false;
-            public bool AlarmEnabled { get; private set; } = false;
-            public bool Debug { get; private set; } = false;
-
-            public float ProjectionAngle { get; private set; } = 50;
+           public float ProjectionAngle { get; private set; } = 50;
             public float MaxRange { get; private set; } = 30000;
             public float TitleScale { get; private set; } = 1.1f;
             public float TextScale { get; private set; } = 0.9f;
@@ -71,19 +71,19 @@ namespace IngameScript
 
                 if (ini.TryParse(data))
                 {
+                    Debug = ini.Get(NAME, "Debug").ToBoolean(Debug);
+                    DrawQuadrants = ini.Get(NAME, "DrawQuadrants").ToBoolean(DrawQuadrants);
+                    DrawObstructions = ini.Get(NAME, "DrawObstructions").ToBoolean(DrawObstructions);
+                    OverrideMaxRange = ini.Get(NAME, "OverrideMaxRange").ToBoolean(OverrideMaxRange);
+                    WarningEnabled = ini.Get(NAME, "WarningEnabled").ToBoolean(WarningEnabled);
+                    AlarmEnabled = ini.Get(NAME, "AlarmEnabled").ToBoolean(AlarmEnabled);
+
                     ControlTag = ini.Get(NAME, "ControlTag").ToString(ControlTag);
                     LCDTag = ini.Get(NAME, "LCDTag").ToString(LCDTag);
                     BroadcastTag = ini.Get(NAME, "BroadcastTag").ToString(BroadcastTag);
                     WarningGroup = ini.Get(NAME, "WarningGroup").ToString(WarningGroup);
                     AlarmGroup = ini.Get(NAME, "AlarmGroup").ToString(AlarmGroup);
                     Font = ini.Get(NAME, "Font").ToString(Font);
-
-                    DrawQuadrants = ini.Get(NAME, "DrawQuadrants").ToBoolean(DrawQuadrants);
-                    DrawObstructions = ini.Get(NAME, "DrawObstructions").ToBoolean(DrawObstructions);
-                    OverrideMaxRange = ini.Get(NAME, "OverrideMaxRange").ToBoolean(OverrideMaxRange);
-                    WarningEnabled = ini.Get(NAME, "WarningEnabled").ToBoolean(WarningEnabled);
-                    AlarmEnabled = ini.Get(NAME, "AlarmEnabled").ToBoolean(AlarmEnabled);
-                    Debug = ini.Get(NAME, "Debug").ToBoolean(Debug);
 
                     ProjectionAngle = (float) ini.Get(NAME, "ProjectionAngle").ToDouble(ProjectionAngle);
                     MaxRange = (float) ini.Get(NAME, "MaxRange").ToDouble(MaxRange);
@@ -109,6 +109,13 @@ namespace IngameScript
                     FriendlyCountColor = ini.Get(NAME, "FriendlyCountColor").ToColor(FriendlyCountColor);
                 }
 
+                ini.Set(NAME, "Debug", Debug);
+                ini.Set(NAME, "DrawQuadrants", DrawQuadrants);
+                ini.Set(NAME, "DrawObstructions", DrawObstructions);
+                ini.Set(NAME, "OverrideMaxRange", OverrideMaxRange);
+                ini.Set(NAME, "WarningEnabled", WarningEnabled);
+                ini.Set(NAME, "AlarmEnabled", AlarmEnabled);
+
                 ini.Set(NAME, "ControlTag", ControlTag);
                 ini.Set(NAME, "LCDTag", LCDTag);
                 ini.Set(NAME, "BroadcastTag", BroadcastTag);
@@ -116,13 +123,6 @@ namespace IngameScript
                 ini.Set(NAME, "WarningGroup", WarningGroup);
                 ini.Set(NAME, "AlarmGroup", AlarmGroup);
                 ini.Set(NAME, "Font", Font);
-
-                ini.Set(NAME, "DrawQuadrants", DrawQuadrants);
-                ini.Set(NAME, "DrawObstructions", DrawObstructions);
-                ini.Set(NAME, "OverrideMaxRange", OverrideMaxRange);
-                ini.Set(NAME, "WarningEnabled", WarningEnabled);
-                ini.Set(NAME, "AlarmEnabled", AlarmEnabled);
-                ini.Set(NAME, "Debug", Debug);
 
                 ini.Set(NAME, "ProjectionAngle", ProjectionAngle);
                 ini.Set(NAME, "MaxRange", MaxRange);
